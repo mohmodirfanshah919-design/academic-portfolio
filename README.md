@@ -17,3 +17,10 @@ Responsive static academic and professional website.
 
 ## Publish with Vercel
 Upload the three site files (`index.html`, `styles.css`, `script.js`) and this README to the root of a GitHub repository. Import that repository into Vercel. Choose framework preset `Other`; leave the build command blank and set the output directory to `.` if Vercel asks.
+
+
+## Updated research and interactions
+- Added two publisher-linked publications with abstracts and DOI/full-text access links.
+- Added publication search/filter, expandable abstracts, animated name-wave typography, and subtle scroll reveals.
+- Added current role: Senior Geotechnical Engineer at L&T.
+- No backend is required: these are client-side interactions on a static site.
