@@ -1,51 +1,18 @@
-const toggle = document.getElementById('menuToggle');
-const nav = document.getElementById('siteNav');
-if (toggle && nav) {
-  toggle.addEventListener('click', () => {
-    const open = nav.classList.toggle('open');
-    toggle.setAttribute('aria-expanded', String(open));
-    toggle.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
-    toggle.textContent = open ? '×' : '☰';
-  });
-  nav.querySelectorAll('a').forEach(link => link.addEventListener('click', () => {
-    nav.classList.remove('open');
-    toggle.setAttribute('aria-expanded', 'false');
-    toggle.setAttribute('aria-label', 'Open navigation');
-    toggle.textContent = '☰';
-  }));
-}
-document.getElementById('year').textContent = new Date().getFullYear();
-
-const publicationSearch = document.getElementById('publicationSearch');
-const publicationCards = Array.from(document.querySelectorAll('#publicationList .publication'));
-const publicationCount = document.getElementById('publicationCount');
-const noPublications = document.getElementById('noPublications');
-if (publicationSearch) {
-  publicationSearch.addEventListener('input', () => {
-    const query = publicationSearch.value.trim().toLowerCase();
-    let visible = 0;
-    publicationCards.forEach(card => {
-      const haystack = (card.dataset.search + ' ' + card.innerText).toLowerCase();
-      const match = haystack.includes(query);
-      card.hidden = !match;
-      if (match) visible++;
-    });
-    if (publicationCount) publicationCount.textContent = `${visible} publication${visible === 1 ? '' : 's'}`;
-    if (noPublications) noPublications.hidden = visible !== 0;
-  });
-}
-// Subtle entrance reveal; content remains visible if reduced motion or observer is unavailable.
-if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-  const revealObserver = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('is-visible');
-        revealObserver.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.12 });
-  document.querySelectorAll('.research-card, .publication, .project-card, .experience-item, .credential').forEach(el => {
-    el.classList.add('reveal-ready');
-    revealObserver.observe(el);
-  });
-}
+const $=(s,root=document)=>root.querySelector(s), $$=(s,root=document)=>[...root.querySelectorAll(s)];
+// Reveal sections as they enter the viewport.
+const revealObserver=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');revealObserver.unobserve(e.target)}}),{threshold:.12});$$('.reveal').forEach(el=>revealObserver.observe(el));
+// Mobile navigation.
+const nav=$('#nav'),menu=$('#menuToggle');menu.addEventListener('click',()=>{const open=nav.classList.toggle('open');menu.setAttribute('aria-expanded',String(open));menu.textContent=open?'×':'☰'});$$('#nav a').forEach(a=>a.addEventListener('click',()=>{nav.classList.remove('open');menu.setAttribute('aria-expanded','false');menu.textContent='☰'}));
+// Theme switch, stored for this browser session only.
+$('#themeToggle').addEventListener('click',()=>{document.body.classList.toggle('light');$('#themeToggle').textContent=document.body.classList.contains('light')?'☾':'☼'});
+// Publications: search, type filters, and abstract expansion.
+let activeFilter='all';function filterPubs(){const q=$('#pubSearch').value.trim().toLowerCase();let visible=0;$$('.pub-card').forEach(card=>{const okType=activeFilter==='all'||card.dataset.type===activeFilter;const okQuery=!q||(`${card.dataset.search} ${card.innerText}`).toLowerCase().includes(q);card.hidden=!(okType&&okQuery);if(!card.hidden)visible++});$('#noResults').hidden=visible>0}$$('.filter').forEach(b=>b.addEventListener('click',()=>{activeFilter=b.dataset.filter;$$('.filter').forEach(x=>x.classList.toggle('active',x===b));filterPubs()}));$('#pubSearch').addEventListener('input',filterPubs);$$('.abstract-toggle').forEach(b=>b.addEventListener('click',()=>{const card=b.closest('.pub-card'),abstract=$('.abstract',card),isOpen=b.getAttribute('aria-expanded')==='true';b.setAttribute('aria-expanded',String(!isOpen));abstract.hidden=isOpen;b.textContent=isOpen?'Show abstract ↓':'Hide abstract ↑'}));
+// Three.js interactive conceptual model. If CDN loading fails, show a CSS model instead.
+const canvasHost=$('#modelCanvas');let scene,camera,renderer,controls,root,rotating=true,threeReady=false,modelMode='footing',depth=3,load=3,animationId;const modelLoading=$('#modelLoading');
+function showFallback(){modelLoading.hidden=true;$('#fallbackModel').hidden=false;$('#viewStatus').textContent='ILLUSTRATIVE MODEL';}
+async function setup3D(){try{const THREE=await import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js');const {OrbitControls}=await import('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js');scene=new THREE.Scene();scene.background=new THREE.Color(0x071724);scene.fog=new THREE.Fog(0x071724,13,25);camera=new THREE.PerspectiveCamera(42,1,.1,100);camera.position.set(7,6,9);renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));renderer.setSize(canvasHost.clientWidth,canvasHost.clientHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;canvasHost.prepend(renderer.domElement);controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.minDistance=5;controls.maxDistance=17;controls.target.set(0,0.3,0);scene.add(new THREE.HemisphereLight(0xa8d9ed,0x172434,2));const key=new THREE.DirectionalLight(0xffd18a,3.2);key.position.set(4,8,5);key.castShadow=true;scene.add(key);const fill=new THREE.PointLight(0x35bde0,22,20);fill.position.set(-5,3,-3);scene.add(fill);root=new THREE.Group();scene.add(root);buildModel(THREE);threeReady=true;modelLoading.hidden=true;$('#viewStatus').textContent='3D VIEW · DRAG TO ROTATE';const resize=()=>{if(!renderer)return;camera.aspect=canvasHost.clientWidth/canvasHost.clientHeight;camera.updateProjectionMatrix();renderer.setSize(canvasHost.clientWidth,canvasHost.clientHeight)};new ResizeObserver(resize).observe(canvasHost);const animate=()=>{animationId=requestAnimationFrame(animate);if(rotating&&root)root.rotation.y+=.0025;controls.update();renderer.render(scene,camera)};animate();}catch(err){console.warn('3D renderer unavailable; using fallback.',err);showFallback()}}
+function buildModel(T){while(root.children.length){const obj=root.children.pop();obj.traverse?.(o=>{o.geometry?.dispose?.();if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose?.())}})}const soilMat=new T.MeshStandardMaterial({color:modelMode==='soil'?0x9b7653:0x8d7053,roughness:.95,metalness:0});const soil=new T.Mesh(new T.BoxGeometry(6,1.4,4.5),soilMat);soil.position.y=-.45;soil.castShadow=true;soil.receiveShadow=true;root.add(soil);const sideMat=new T.MeshStandardMaterial({color:0x314d5d,wireframe:true,transparent:true,opacity:.18});const wire=new T.Mesh(new T.BoxGeometry(6.03,1.43,4.53),sideMat);wire.position.copy(soil.position);root.add(wire);const sand=new T.Mesh(new T.BoxGeometry(5.9,.12,4.4),new T.MeshStandardMaterial({color:0xb99166,roughness:1}));sand.position.y=.32;root.add(sand);if(modelMode!=='soil'){const cellMat=new T.MeshStandardMaterial({color:0x263b42,roughness:.55,metalness:.35,side:T.DoubleSide});const goldMat=new T.MeshStandardMaterial({color:0xe6b45e,roughness:.42,metalness:.45});const cellY=.42-(depth-3)*.10;const rows=8,cols=10;for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const x=(c-(cols-1)/2)*.52,z=(r-(rows-1)/2)*.48;const shape=new T.Shape();const rad=.27;for(let k=0;k<6;k++){const a=Math.PI/3*k+Math.PI/6,px=Math.cos(a)*rad,pz=Math.sin(a)*rad;k?shape.lineTo(px,pz):shape.moveTo(px,pz)}shape.closePath();const geo=new T.ExtrudeGeometry(shape,{depth:.14,bevelEnabled:false});const mesh=new T.Mesh(geo,cellMat);mesh.rotation.x=-Math.PI/2;mesh.position.set(x,cellY,z);mesh.castShadow=true;root.add(mesh);const edges=new T.LineSegments(new T.EdgesGeometry(new T.CylinderGeometry(.27,.27,.14,6,1,true)),goldMat);edges.position.set(x,cellY+.07,z);edges.rotation.y=Math.PI/6;root.add(edges)}}const footingMat=new T.MeshStandardMaterial({color:0xb6c5ca,roughness:.5,metalness:.2});const footing=new T.Mesh(new T.BoxGeometry(1.65,.35,1.65),footingMat);footing.position.y=modelMode==='geocell'?.98:.62;footing.castShadow=true;footing.receiveShadow=true;root.add(footing);const column=new T.Mesh(new T.BoxGeometry(.55,1.15,.55),new T.MeshStandardMaterial({color:0x859da7,roughness:.5,metalness:.25}));column.position.y=1.35;column.castShadow=true;root.add(column);if(modelMode==='soil'){root.children.forEach(o=>{if(o.material&&o.material.color&&o!==column&&o!==footing)o.material.color?.set?.(0x9d7855)})}const base=new T.GridHelper(12,24,0x47768b,0x234457);base.position.y=-1.18;base.material.transparent=true;base.material.opacity=.45;root.add(base);const forceMat=new T.MeshBasicMaterial({color:load>3?0xff765e:0xefbd62});const arrow=new T.ArrowHelper(new T.Vector3(0,-1,0),new T.Vector3(0,2.3,0),.55+load*.12,load>3?0xff765e:0xefbd62,.22,.13);root.add(arrow);if(modelMode==='geocell'){footing.position.y=1.35;column.position.y=1.9;soil.scale.y=.75;soil.position.y=-.55}root.rotation.y=-.35;}
+function updateModel(){if(threeReady){const T=window.THREE;/* module namespace is intentionally kept through model builder below */}$('#depthValue').textContent=(depth/10).toFixed(1)+' m';$('#loadValue').textContent=['Very low','Low','Medium','High','Very high'][load-1];$('#modelTitle').textContent={footing:'Geocell-reinforced footing',geocell:'Inside the geocell layer',soil:'Layered soil section'}[modelMode];$('#modelDescription').textContent={footing:'A simplified 3D illustration of a footing, geocell layer and soil mass. Drag to rotate; scroll to zoom.',geocell:'Explore the cellular reinforcement beneath a foundation. This view is a conceptual geometry illustration, not a construction detail.',soil:'A cutaway view of the soil mass and foundation interface. Actual stratigraphy and parameters depend on project-specific investigation.'}[modelMode];if(threeReady)rebuildCurrentModel()}
+let rebuildCurrentModel=()=>{};const depthControl=$('#depthControl'),loadControl=$('#loadControl');depthControl.addEventListener('input',()=>{depth=+depthControl.value;updateModel()});loadControl.addEventListener('input',()=>{load=+loadControl.value;updateModel()});$$('.model-tab').forEach(b=>b.addEventListener('click',()=>{modelMode=b.dataset.model;$$('.model-tab').forEach(x=>x.classList.toggle('active',x===b));updateModel()}));$('#rotateToggle').addEventListener('click',()=>{rotating=!rotating;$('#rotateToggle').textContent=rotating?'Ⅱ Pause rotation':'▶ Resume rotation'});$('#resetModel').addEventListener('click',()=>{if(controls){camera.position.set(7,6,9);controls.target.set(0,.3,0);controls.update()}if(root)root.rotation.set(0,-.35,0)});
+// Keep the Three.js namespace available to rebuild geometry when controls change.
+(async()=>{try{const T=await import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js');rebuildCurrentModel=()=>{if(root){while(root.children.length){const obj=root.children[0];root.remove(obj);obj.traverse?.(o=>{o.geometry?.dispose?.();if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose?.())})}buildModel(T)}}}catch(e){}})();setup3D();
