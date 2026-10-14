@@ -1,0 +1,27 @@
+1) Upload all these files to the root folder of zuhakanji.in (same folder as index.html).
+
+2) Paste this inside <head> of index.html (replace any old favicon lines):
+
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+3) Fix the broken logo in the header AND the footer. Find the <img> next to
+   "Zuha Kanji" and set its src to the logo file:
+
+<img src="/logo.svg" alt="Zuha Kanji logo" width="32" height="32">
+
+   (Use /logo.png instead if your site builder doesn't accept SVG.)
+
+4) Hard-refresh the browser (Ctrl+Shift+R). Favicons are cached heavily,
+   so the tab icon may take a few minutes or a new tab to update.
+
+5) Publication images are in images/publications/. Use them on your
+   Publications section, for example:
+
+<img src="/images/publications/geocell_interfering_footings_GAE_2026.png"
+     alt="Comparative analysis of different-shaped interfering footings on geocell-reinforced silty sand">
+<img src="/images/publications/geocell_pond_ash_circular_footing_Springer_IGC2024.png"
+     alt="Numerical analysis of circular footing on geocell-reinforced pond ash bed">
