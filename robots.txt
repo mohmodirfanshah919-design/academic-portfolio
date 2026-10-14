@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://zuhakanji.in/sitemap.xml

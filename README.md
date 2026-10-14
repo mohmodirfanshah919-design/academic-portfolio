@@ -61,3 +61,8 @@ Hard-refresh after deploying (Ctrl/⌘ + Shift + R). Favicons are cached for a w
 - The 3D model and the solar-pile drawing are conceptual. Nothing on them is a design result.
 - The calculator is for learning: general bearing capacity equation, vertical centric load, level ground, no settlement or reinforcement. The page says so.
 - DOI and publisher links go to the publishers' pages; access is controlled by the publishers.
+
+
+## SEO deployment checklist
+
+See [`SEO-DEPLOYMENT-CHECKLIST.md`](SEO-DEPLOYMENT-CHECKLIST.md) for the source-level changes, deployment steps, domain canonicalisation checks, and Google Search Console setup.
