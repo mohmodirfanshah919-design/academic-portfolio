@@ -1,58 +1,63 @@
-# Zuha Kanji — Academic and Engineering Portfolio
+# Zuha Kanji — Portfolio
 
-A static, single-page portfolio. No build step, no framework, no server.
+Personal site for Zuha Kanji, Senior Geotechnical Engineer at Larsen & Toubro (Renewables IC, Middle East projects) and researcher in geocell-reinforced foundations.
+
+Plain static files: no build step, no framework, no server code.
+
+## What's on the page
+
+| Section | What it does |
+| --- | --- |
+| Hero | Animated footing-on-geocell drawing that assembles once on load |
+| Profile | Summary and record of roles and qualifications |
+| Current work | Interactive solar-pile cross-section: six hotspots (wind, pile, cemented layer, groundwater, load testing, resistivity) with keyboard arrow navigation |
+| Research | Four research interests |
+| Publications | Search, type filter, sort by year, copy APA or BibTeX. Press `/` anywhere to jump to search |
+| 3D model | Three.js footing and geocell model, loaded only when scrolled near |
+| Calculator | Live bearing capacity calculator with soil presets, term breakdown and a width-versus-capacity chart |
+| Experience | Timeline, academic projects, grouped skills |
+| Contact | Email, copy-email button, LinkedIn |
+
+Also: light/dark theme (remembers the visitor's choice), gold reading-progress line under the header, borehole-log section rail on wide screens, reduced-motion support, print styles, a custom 404 page.
 
 ## Files
 
-| File | Purpose |
-| --- | --- |
-| `index.html` | Page content, metadata, import map for Three.js |
-| `styles.css` | Design tokens, layout, components, light/dark themes, print styles |
-| `script.js` | Theme, navigation, publication search/filter, copy buttons, lazy-loaded 3D model |
-| `favicon.png` | 512 px logo (browser icon and source asset) |
-| `favicon-32.png` | 32 px browser-tab icon |
-| `apple-touch-icon.png` | 180 px home-screen icon for iOS |
-| `logo-96.png` | Header logo |
-| `og-image.png` | 1200 × 630 social-sharing preview |
-
-## Deploy (GitHub + Vercel)
-
-1. Extract the ZIP.
-2. Open the `academic-portfolio` repository on GitHub and choose **Add file → Upload files**.
-3. Upload all nine files above, replacing files with the same names.
-4. Delete the old icon file if it exists (it was referenced as `favicon.png.png`). It is no longer used.
-5. Commit to the branch connected to Vercel.
-6. In Vercel, wait for the deployment to show **Ready**, then open the domain and hard-refresh (Ctrl/⌘ + Shift + R) so the new icons and styles load.
-
-No Vercel settings need to change: the site is plain static files served from the repository root.
-
-## After the first deploy: enable social previews
-
-Social sites need absolute URLs, and the production domain isn't recorded in the project. In `index.html`, find the three commented lines near the top and replace `https://YOUR-DOMAIN` with the real domain, then remove the `<!--` and `-->` around each:
-
-```html
-<link rel="canonical" href="https://YOUR-DOMAIN/">
-<meta property="og:url" content="https://YOUR-DOMAIN/">
-<meta property="og:image" content="https://YOUR-DOMAIN/og-image.png">
+```
+index.html            page content and metadata
+styles.css            design tokens, layout, components, themes, print
+script.js             all interactivity
+404.html              "page not found" page
+logo.svg / logo.png   header and footer logo
+favicon.ico, favicon.svg, favicon-16x16.png, favicon-32x32.png
+apple-touch-icon.png, android-chrome-192x192.png, android-chrome-512x512.png
+site.webmanifest      home-screen icon settings
+og-image.png          1200 x 630 social-sharing preview
+robots.txt, sitemap.xml
+.nojekyll             tells GitHub Pages to serve files as-is
 ```
 
-## How it behaves
+## Upload to GitHub
 
-- **Themes:** follows the device's light/dark setting until the visitor uses the toggle; their choice is remembered in that browser.
-- **3D model:** Three.js 0.160.0 is downloaded from jsDelivr only when the visitor scrolls near the model, so it doesn't slow the first load. Rendering pauses when the model is off-screen or the tab is hidden. If WebGL is unavailable or the library can't be downloaded, a static cross-section is shown with an explanation.
-- **Page scrolling is never captured by the model.** Zoom uses the buttons, a pinch, or Ctrl + scroll.
-- **Reduced motion:** with the system "reduce motion" setting on, the hero drawing appears without animation, smooth scrolling is off, and the model doesn't auto-rotate.
-- **Without JavaScript** all content is still readable and the static cross-section is shown.
-- **Opening `index.html` directly from disk works**, apart from the 3D model and fonts if you're offline.
+1. Unzip the download.
+2. In the repository, choose **Add file → Upload files** and drag in everything inside the folder (including `.nojekyll`; on macOS press ⌘ + Shift + . to show hidden files).
+3. Delete files from the old version that are no longer used: `logo-96.png`, `favicon-32.png`, `favicon.png`, `HOW-TO-USE.txt`.
+4. Commit to the branch your host deploys from.
 
-## Editing content
+**Vercel:** nothing to change; it redeploys on commit. **GitHub Pages:** Settings → Pages → Deploy from branch → `main` / root. For the custom domain, add `zuhakanji.in` under Settings → Pages → Custom domain.
 
-- **Add a publication:** copy an `<article class="pub">` block in `index.html`. Set `data-type` to `journal` or `chapter`, add search terms to `data-keywords`, and update the `data-copy` citation text. The result count updates automatically.
-- **Colours and type** are CSS custom properties at the top of `styles.css` (section 1).
-- **3D views** (titles, descriptions, camera positions) are in the `VIEWS` object in `script.js`.
+Hard-refresh after deploying (Ctrl/⌘ + Shift + R). Favicons are cached for a while.
+
+## Editing
+
+- **Current work text:** the six explainer cards are in `PV_STEPS` in `script.js`; the scope list is in `index.html` under `id="work"`. These describe the typical geotechnical scope of utility-scale solar work, so trim anything that doesn't match the actual role.
+- **Add a publication:** copy an `<article class="pub">` block. Set `data-year`, `data-type` (`journal` or `chapter`), `data-keywords`, and both `data-copy` citations (APA and BibTeX).
+- **Calculator soil presets:** `PRESETS` in `script.js`.
+- **3D views:** `VIEWS` in `script.js`.
+- **Colours and type:** custom properties at the top of `styles.css`.
+- **Domain:** `https://zuhakanji.in/` is set in `index.html` (canonical, Open Graph), `robots.txt` and `sitemap.xml`. Change all four if the domain changes.
 
 ## Integrity notes
 
-- The 3D scene is a conceptual visualisation. Sliders change the picture only; they don't calculate engineering results. This is stated on the page.
-- DOI and publisher links open the publishers' pages. Access or purchase options are controlled by the publishers.
-- No phone number, date of birth or portrait is included.
+- The 3D model and the solar-pile drawing are conceptual. Nothing on them is a design result.
+- The calculator is for learning: general bearing capacity equation, vertical centric load, level ground, no settlement or reinforcement. The page says so.
+- DOI and publisher links go to the publishers' pages; access is controlled by the publishers.

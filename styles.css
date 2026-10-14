@@ -6,7 +6,7 @@
    3. Layout (header, containers, borehole-log rail)
    4. Components (buttons, segmented controls, tiles, toast)
    5. Sections (hero, profile, research, publications, experience, contact)
-   6. 3D model
+   6. 3D model (6b. renewables explorer, calculator)
    7. Motion
    8. Print
    ========================================================================== */
@@ -41,11 +41,13 @@
 
   /* Borehole-log strata, getting denser with depth */
   --stratum-1: #DCE1F3;
-  --stratum-2: #C5CDEB;
-  --stratum-3: #A9B4E0;
-  --stratum-4: #8896D0;
-  --stratum-5: #6375BC;
-  --stratum-6: #1B2A6B;
+  --stratum-2: #CCD3EE;
+  --stratum-3: #B8C2E6;
+  --stratum-4: #A1ADDC;
+  --stratum-5: #8896D0;
+  --stratum-6: #6E7FC3;
+  --stratum-7: #4F62B0;
+  --stratum-8: #1B2A6B;
   --stratum-ink: rgba(19, 27, 63, .35);
 
   /* Type */
@@ -85,8 +87,8 @@
     --ink: #EDF0FA; --ink-2: #A9B2D6;
     --line: rgba(226, 232, 255, .12); --line-strong: rgba(226, 232, 255, .26);
     --accent-ink: var(--gold); --btn-bg: var(--gold); --btn-ink: var(--navy-deep); --focus: var(--gold);
-    --stratum-1: #24306A; --stratum-2: #2B3A7C; --stratum-3: #34458E; --stratum-4: #3E52A1;
-    --stratum-5: #4B60B3; --stratum-6: #8A97CF; --stratum-ink: rgba(237, 240, 250, .3);
+    --stratum-1: #222D64; --stratum-2: #283573; --stratum-3: #2F3E83; --stratum-4: #374893;
+    --stratum-5: #4053A2; --stratum-6: #4C60B2; --stratum-7: #6274C0; --stratum-8: #8A97CF; --stratum-ink: rgba(237, 240, 250, .3);
     color-scheme: dark;
   }
 }
@@ -95,8 +97,8 @@
   --ink: #EDF0FA; --ink-2: #A9B2D6;
   --line: rgba(226, 232, 255, .12); --line-strong: rgba(226, 232, 255, .26);
   --accent-ink: var(--gold); --btn-bg: var(--gold); --btn-ink: var(--navy-deep); --focus: var(--gold);
-  --stratum-1: #24306A; --stratum-2: #2B3A7C; --stratum-3: #34458E; --stratum-4: #3E52A1;
-  --stratum-5: #4B60B3; --stratum-6: #8A97CF; --stratum-ink: rgba(237, 240, 250, .3);
+  --stratum-1: #222D64; --stratum-2: #283573; --stratum-3: #2F3E83; --stratum-4: #374893;
+  --stratum-5: #4053A2; --stratum-6: #4C60B2; --stratum-7: #6274C0; --stratum-8: #8A97CF; --stratum-ink: rgba(237, 240, 250, .3);
   color-scheme: dark;
 }
 
@@ -177,15 +179,15 @@ main:focus { outline: none; }
 .site-nav ul { list-style: none; margin: 0; padding: 0; display: flex; gap: var(--s-1); }
 .site-nav a {
   display: block; position: relative;
-  padding: var(--s-2) var(--s-3);
-  font: 500 .95rem/1.5 var(--font-display);
+  padding: var(--s-2) .6rem;
+  font: 500 .92rem/1.5 var(--font-display);
   color: var(--ink-2); text-decoration: none; border-radius: var(--r-sm);
   transition: color .2s;
 }
 .site-nav a:hover { color: var(--ink); }
 .site-nav a[aria-current="true"] { color: var(--ink); }
 .site-nav a[aria-current="true"]::after {
-  content: ""; position: absolute; left: var(--s-3); right: var(--s-3); bottom: 2px;
+  content: ""; position: absolute; left: .6rem; right: .6rem; bottom: 2px;
   height: 2px; background: var(--gold); border-radius: 2px;
 }
 
@@ -207,7 +209,7 @@ main:focus { outline: none; }
 .menu-toggle[aria-expanded="true"] .m-mid { opacity: 0; }
 .menu-toggle[aria-expanded="true"] .m-bot { transform: translateY(-5px) rotate(-45deg); }
 
-@media (max-width: 899px) {
+@media (max-width: 1149px) {
   .menu-toggle { display: grid; }
   .site-nav {
     position: fixed; inset: var(--header-h) 0 auto 0;
@@ -536,6 +538,159 @@ main:focus { outline: none; }
   .tool-text { grid-column: span 2; }
 }
 
+/* 6b. Additions: scroll progress, renewables explorer, calculator ---------- */
+
+/* Gold reading-progress line along the bottom of the header */
+.scroll-progress {
+  position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+  background: var(--gold); transform-origin: 0 50%;
+  transform: scaleX(var(--progress, 0));
+  pointer-events: none;
+}
+
+/* Publication tools: keyboard hint and sort */
+.search-key {
+  position: absolute; right: 10px; padding: 1px 7px; border: 1px solid var(--line-strong); border-radius: 5px;
+  font: 500 .8rem/1.4 var(--font-display); color: var(--ink-2); background: var(--surface-2);
+}
+.search:focus-within .search-key { display: none; }
+.search input { padding-right: 2.5rem; }
+.sort { display: inline-flex; align-items: center; gap: var(--s-2); font: 500 .875rem var(--font-display); color: var(--ink-2); }
+.sort select {
+  min-height: 46px; padding: 0 2.2rem 0 .8rem; border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%237A84AE' stroke-width='1.8'/%3E%3C/svg%3E") no-repeat right .8rem center / 12px 8px;
+  color: var(--ink); font: 600 .9rem var(--font-display); appearance: none; -webkit-appearance: none; cursor: pointer;
+}
+.pub-actions button[data-copy^="@"] { font-variant-ligatures: none; }
+
+/* Renewables explorer */
+.pv-explorer { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(16rem, 1fr); gap: clamp(1.5rem, 3.5vw, 3rem); align-items: center; }
+.pv-figure { padding: clamp(.75rem, 1.6vw, 1.25rem); }
+.pv-stage { position: relative; aspect-ratio: 640 / 440; border-radius: var(--r-md); overflow: hidden;
+  background: linear-gradient(180deg, #24357F 0%, #1E2D72 44%, var(--navy-deep) 46%); }
+.pv-art { width: 100%; height: 100%; font-family: var(--font-display); }
+.pd-label { font-size: 13px; fill: rgba(243, 245, 252, .8); }
+.pd-label-gold { fill: #F2B33D; }
+.pd-part { transition: opacity .35s var(--ease); }
+.pd-glow { opacity: 0; transition: opacity .35s var(--ease); }
+.pv-stage[data-active] .pd-part { opacity: .38; }
+.pv-stage[data-active] .pd-part[data-part="ground"] { opacity: .7; }
+.pv-stage[data-active="wind"] .pd-part[data-part="wind"],
+.pv-stage[data-active="wind"] .pd-part[data-part="pile"],
+.pv-stage[data-active="pile"] .pd-part[data-part="pile"],
+.pv-stage[data-active="cap"] .pd-part[data-part="cap"],
+.pv-stage[data-active="cap"] .pd-part[data-part="pile"],
+.pv-stage[data-active="water"] .pd-part[data-part="water"],
+.pv-stage[data-active="water"] .pd-part[data-part="pile"],
+.pv-stage[data-active="test"] .pd-part[data-part="test"],
+.pv-stage[data-active="resist"] .pd-part[data-part="resist"] { opacity: 1; }
+.pv-stage[data-active="cap"] .pd-glow { opacity: 1; }
+
+.hotspot {
+  position: absolute; left: var(--x); top: var(--y); width: 44px; height: 44px; margin: -22px 0 0 -22px;
+  border: 0; border-radius: 50%; background: transparent; display: grid; place-items: center;
+}
+.hotspot::before {
+  content: ""; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--navy-deep); border: 2px solid var(--gold);
+  box-shadow: 0 0 0 4px rgba(242, 179, 61, .22);
+  transition: transform .2s var(--ease), background-color .2s;
+}
+.hotspot:hover::before { transform: scale(1.15); }
+.hotspot[aria-pressed="true"]::before { background: var(--gold); transform: scale(1.2); }
+.hotspot:focus-visible { outline: 3px solid var(--gold); outline-offset: 0; }
+.pv-caption { margin-top: var(--s-3); font: 400 .8rem var(--font-display); color: var(--tile-ink-2); }
+
+.pv-panel { border-top: 2px solid var(--ink); padding-top: var(--s-5); }
+.pv-count { font: 600 .875rem var(--font-display); color: var(--accent-ink); font-variant-numeric: tabular-nums; }
+.pv-panel h3 { margin-top: var(--s-2); font-size: var(--step-3); font-stretch: 108%; line-height: 1.1; }
+.pv-panel #pvText { margin-top: var(--s-4); color: var(--ink-2); min-height: 9.5em; }
+.pv-nav { display: flex; gap: var(--s-2); margin-top: var(--s-5); }
+.pv-panel.is-changing h3, .pv-panel.is-changing #pvText { opacity: 0; transform: translateY(6px); }
+.pv-panel h3, .pv-panel #pvText { transition: opacity .25s var(--ease), transform .3s var(--ease); }
+
+.scope { margin-top: clamp(2.5rem, 6vw, 4rem); }
+.scope-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-5) clamp(2rem, 5vw, 4.5rem); }
+.scope-list li { padding-top: var(--s-4); border-top: 1px solid var(--line-strong); color: var(--ink-2); }
+.scope-list strong { display: block; margin-bottom: var(--s-1); font: 650 1.05rem/1.35 var(--font-display); color: var(--ink); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .pv-stage[data-active="wind"] .pd-wind { animation: gust 1.6s var(--ease) infinite; }
+  .pv-stage[data-active="wind"] .pd-uplift { animation: lift 1.6s var(--ease) infinite; }
+  .pv-stage[data-active="water"] .pd-water { animation: flow 1.2s linear infinite; }
+  .pv-stage[data-active="test"] .pd-needle { transform-box: view-box; transform-origin: 566px 188px; animation: needle 2.4s var(--ease) infinite; }
+}
+@keyframes gust { 0% { transform: translateX(-10px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateX(14px); opacity: 0; } }
+@keyframes lift { 0%, 100% { transform: translateY(4px); } 50% { transform: translateY(-6px); } }
+@keyframes flow { to { stroke-dashoffset: -32; } }
+@keyframes needle { 0%, 100% { transform: rotate(0); } 60% { transform: rotate(150deg); } }
+
+@media (max-width: 1000px) { .pv-explorer { grid-template-columns: minmax(0, 1fr); } .pv-panel #pvText { min-height: 0; } }
+@media (max-width: 720px) { .scope-list { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 520px) { .pd-label { display: none; } .hotspot::before { width: 16px; height: 16px; } }
+
+/* Calculator */
+.calc { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: clamp(1.5rem, 3.5vw, 3rem); align-items: start; }
+.calc-inputs { display: grid; gap: var(--s-6); }
+.calc-ranges { display: grid; gap: var(--s-4); }
+.calc-ranges .range + .range { margin-top: 0; }
+.range output { font-variant-numeric: tabular-nums; }
+.chips { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.chip {
+  min-height: 40px; padding: .4rem .9rem; border: 1px solid var(--line-strong); border-radius: var(--r-pill);
+  background: transparent; font: 500 .9rem var(--font-display); color: var(--ink);
+  transition: background-color .2s, border-color .2s, color .2s;
+}
+.chip:hover { border-color: var(--ink); }
+.chip[aria-pressed="true"] { background: var(--btn-bg); border-color: var(--btn-bg); color: var(--btn-ink); }
+.check { display: flex; gap: var(--s-3); align-items: flex-start; font: 500 .925rem/1.45 var(--font-display); cursor: pointer; }
+.check input { width: 20px; height: 20px; margin: 1px 0 0; flex: none; accent-color: var(--btn-bg); }
+
+.calc-out { padding: clamp(1.25rem, 3vw, 2.25rem); display: grid; gap: var(--s-6); position: sticky; top: calc(var(--header-h) + var(--s-4)); }
+.calc-figures { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-5); }
+.calc-k { font: 500 .85rem/1.4 var(--font-display); color: var(--tile-ink-2); }
+.calc-v { margin-top: var(--s-1); font: 800 clamp(2rem, 1.4rem + 2.4vw, 3.2rem)/1 var(--font-display); font-stretch: 118%; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.calc-v-gold { color: var(--gold); }
+.calc-u { font-size: .4em; font-weight: 600; font-stretch: 100%; letter-spacing: 0; color: var(--tile-ink-2); }
+
+.term-bar { display: flex; height: 14px; margin-top: var(--s-3); border-radius: 3px; overflow: hidden; background: var(--tile-line); }
+.term { display: block; height: 100%; width: 0; transition: width .45s var(--ease); }
+.term-c, .dot-c { background: #8FA0E8; }
+.term-q, .dot-q { background: #F3F5FC; }
+.term-g, .dot-g { background: var(--gold); }
+.term-key { list-style: none; margin: var(--s-3) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-5); font: 400 .875rem var(--font-display); color: var(--tile-ink-2); }
+.term-key li { display: flex; align-items: center; gap: var(--s-2); }
+.term-key b { color: var(--tile-ink); font-weight: 650; font-variant-numeric: tabular-nums; }
+.dot { width: 10px; height: 10px; border-radius: 2px; }
+
+.calc-chart svg { width: 100%; height: auto; margin-top: var(--s-2); font-family: var(--font-display); overflow: visible; }
+.calc-chart .axis { stroke: var(--tile-line); }
+.calc-chart .tick { fill: var(--tile-ink-2); font-size: 10.5px; }
+.calc-chart .curve { fill: none; stroke: var(--gold); stroke-width: 2.5; stroke-linejoin: round; }
+.calc-chart .area { fill: rgba(242, 179, 61, .12); }
+.calc-chart .pt { fill: var(--gold); stroke: var(--navy); stroke-width: 3; }
+.calc-chart .guide { stroke: rgba(243, 245, 252, .35); stroke-dasharray: 3 4; }
+
+.factors { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--tile-line); padding-top: var(--s-4); }
+.factors dt { font: 500 .85rem var(--font-display); color: var(--tile-ink-2); }
+.factors dd { margin: 2px 0 0; font: 650 1.2rem var(--font-display); font-variant-numeric: tabular-nums; }
+
+.method { margin-top: var(--s-6); max-width: var(--measure); }
+.method summary { display: inline-flex; align-items: center; gap: var(--s-2); min-height: 40px; font: 600 .95rem var(--font-display); color: var(--accent-ink); cursor: pointer; list-style: none; }
+.method summary::-webkit-details-marker { display: none; }
+.method summary::after { content: ""; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-2px) rotate(45deg); transition: transform .2s var(--ease); }
+.method[open] summary::after { transform: translateY(2px) rotate(-135deg); }
+.method p { margin-top: var(--s-3); color: var(--ink-2); font-size: .975rem; }
+
+@media (max-width: 1000px) { .calc { grid-template-columns: minmax(0, 1fr); } .calc-out { position: static; } }
+@media (max-width: 420px) { .calc-figures { grid-template-columns: minmax(0, 1fr); } }
+
+/* Experience additions */
+.tl-current .tl-date { display: inline-flex; align-items: center; gap: var(--s-2); align-self: start; }
+.tl-current .tl-date::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 4px color-mix(in srgb, var(--gold) 25%, transparent); }
+.skill-groups { display: grid; gap: var(--s-5); }
+.skill-head { font: 500 .85rem var(--font-display); color: var(--ink-2); margin-bottom: var(--s-2); }
+
 /* 7. Motion ----------------------------------------------------------------
    One orchestrated moment: the hero drawing assembles once on load. */
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -559,7 +714,7 @@ main:focus { outline: none; }
 
 /* 8. Print ----------------------------------------------------------------- */
 @media print {
-  .site-header, .log-rail, .hero-figure, .actions, .pub-tools, .pub-status, .pub-actions, #lab, .toast, .skip-link, .site-footer a { display: none !important; }
+  .site-header, .log-rail, .hero-figure, .actions, .pub-tools, .pub-status, .pub-actions, #lab, #tools, .pv-stage .hotspot, .pv-nav, .scroll-progress, .toast, .skip-link, .site-footer a { display: none !important; }
   body { background: #fff; color: #000; font-size: 11pt; }
   .tile { background: none !important; color: #000; border: 1px solid #999; }
   .tile h1, .tile h2, .tile *, .hero-lead, .hero-facts dt { color: #000 !important; }

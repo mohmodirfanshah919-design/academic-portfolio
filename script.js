@@ -50,7 +50,7 @@
     var header = $('.site-header');
     var nav = $('#siteNav');
     var toggle = $('#menuToggle');
-    var desktop = window.matchMedia('(min-width: 900px)');
+    var desktop = window.matchMedia('(min-width: 1150px)');
 
     function isOpen() { return toggle && toggle.getAttribute('aria-expanded') === 'true'; }
     function setOpen(open, returnFocus) {
@@ -195,6 +195,14 @@
       filterBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.filter === value)); });
       apply();
     }
+
+    var sortSel = $('#pubSort');
+    function sort() {
+      var dir = sortSel && sortSel.value === 'old' ? 1 : -1;
+      items.slice().sort(function (a, b) { return dir * ((+a.dataset.year || 0) - (+b.dataset.year || 0)); })
+        .forEach(function (el) { list.insertBefore(el, empty || null); });
+    }
+    if (sortSel) sortSel.addEventListener('change', sort);
 
     filterBtns.forEach(function (b) { b.addEventListener('click', function () { setFilter(b.dataset.filter); }); });
     if (input) input.addEventListener('input', apply);
@@ -608,6 +616,215 @@
     return { setView: setView, setDepth: setDepth, setLoad: setLoad, orbit: orbit, zoom: zoom, setSpin: setSpin };
   }
 
+  /* Reading progress line in the header -------------------------------- */
+  function initProgress() {
+    var bar = $('.scroll-progress');
+    if (!bar) return;
+    var ticking = false;
+    function update() {
+      ticking = false;
+      var max = document.documentElement.scrollHeight - window.innerHeight;
+      bar.style.setProperty('--progress', max > 0 ? Math.min(window.scrollY / max, 1).toFixed(4) : 0);
+    }
+    window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+  }
+
+  /* Renewables explorer ------------------------------------------------- */
+  var PV_STEPS = [
+    { id: 'wind', title: 'Wind, not weight, governs',
+      text: 'Solar modules are light but catch a lot of wind. Gusts across a tilted table create uplift and overturning, so the piles are checked mainly for pull-out (tension) and lateral load rather than for compression.' },
+    { id: 'pile', title: 'Driven steel piles',
+      text: 'Module tables usually sit on galvanised steel sections driven straight into the ground. Embedment depth comes from the investigation data and trial-pile tests, and because the same pile repeats thousands of times, a few centimetres saved or added matters across the whole plant.' },
+    { id: 'cap', title: 'Hard layers and refusal',
+      text: 'Desert profiles often include cemented calcareous sand or caprock close to the surface. Piles can stop short of their design depth when they meet it. The ground model shows where this is likely, so pre-drilling or another foundation type can be planned rather than discovered.' },
+    { id: 'water', title: 'Saline ground and corrosion',
+      text: 'In coastal and sabkha areas, shallow groundwater can carry high chloride and sulphate content that attacks steel and concrete. Chemical test results feed the corrosion allowance on steel piles, coating choices and the concrete exposure class.' },
+    { id: 'test', title: 'Pile load testing',
+      text: 'Before production piling, trial piles at representative locations are loaded in compression, tension and laterally against a reaction frame. The measured load and displacement confirm capacity and calibrate the design for the rest of the site.' },
+    { id: 'resist', title: 'Electrical and thermal resistivity',
+      text: 'Field resistivity tests, typically with four electrodes at equal spacing (the Wenner method), give inputs for earthing design. Thermal resistivity of the soil affects how much current buried cables can carry.' }
+  ];
+
+  function initExplorer() {
+    var stage = $('#pvStage');
+    if (!stage) return;
+    var spots = $$('[data-hotspot]', stage);
+    var panel = $('#pvPanel'), title = $('#pvTitle'), text = $('#pvText'), index = $('#pvIndex');
+    var current = 1, swapTimer;
+
+    function show(i, focusSpot) {
+      current = (i + PV_STEPS.length) % PV_STEPS.length;
+      var step = PV_STEPS[current];
+      stage.setAttribute('data-active', step.id);
+      spots.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.hotspot === step.id)); });
+      if (focusSpot) { var s = spots.filter(function (b) { return b.dataset.hotspot === step.id; })[0]; if (s) s.focus(); }
+      var apply = function () { title.textContent = step.title; text.textContent = step.text; index.textContent = current + 1; panel.classList.remove('is-changing'); };
+      clearTimeout(swapTimer);
+      if (reducedMotion.matches) { apply(); return; }
+      panel.classList.add('is-changing');
+      swapTimer = setTimeout(apply, 180);
+    }
+    function indexOf(id) { for (var i = 0; i < PV_STEPS.length; i++) if (PV_STEPS[i].id === id) return i; return 0; }
+
+    spots.forEach(function (b) {
+      b.addEventListener('click', function () { show(indexOf(b.dataset.hotspot)); });
+      b.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); show(current + 1, true); }
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); show(current - 1, true); }
+      });
+    });
+    var prev = $('#pvPrev'), next = $('#pvNext');
+    if (prev) prev.addEventListener('click', function () { show(current - 1); });
+    if (next) next.addEventListener('click', function () { show(current + 1); });
+    stage.setAttribute('data-active', PV_STEPS[current].id);
+  }
+
+  /* Bearing capacity calculator ----------------------------------------
+     General bearing capacity equation, vertical centric load, level ground.
+     Nq, Nc: Reissner/Prandtl. Ngamma: Vesic. Shape: De Beer. Depth: Hansen. */
+  var PRESETS = {
+    looseSand: { c: 0,  phi: 28, g: 16 },
+    denseSand: { c: 0,  phi: 38, g: 19.5 },
+    softClay:  { c: 20, phi: 0,  g: 17 },
+    stiffClay: { c: 75, phi: 0,  g: 19.5 },
+    cPhi:      { c: 8,  phi: 30, g: 18 }
+  };
+
+  function bearing(p) {
+    var phi = p.phi * Math.PI / 180, t = Math.tan(phi);
+    var Nq = p.phi === 0 ? 1 : Math.exp(Math.PI * t) * Math.pow(Math.tan(Math.PI / 4 + phi / 2), 2);
+    var Nc = p.phi === 0 ? 5.14 : (Nq - 1) / t;
+    var Ng = 2 * (Nq + 1) * t;
+    var BL = p.shape === 'strip' ? 0 : 1;
+    var sc = 1 + BL * Nq / Nc, sq = 1 + BL * t, sg = 1 - 0.4 * BL;
+    var r = p.B > 0 ? p.Df / p.B : 0;
+    var k = r <= 1 ? r : Math.atan(r);
+    var dq = 1 + 2 * t * Math.pow(1 - Math.sin(phi), 2) * k;
+    var dc = p.phi === 0 ? 1 + 0.4 * k : dq - (1 - dq) / (Nc * t);
+    var gEff = p.gw ? Math.max(p.g - 9.81, 0) : p.g;
+    var q = p.g * p.Df;
+    var tc = p.c * Nc * sc * dc, tq = q * Nq * sq * dq, tg = 0.5 * gEff * p.B * Ng * sg;
+    return { Nc: Nc, Nq: Nq, Ng: Ng, tc: tc, tq: tq, tg: tg, qult: tc + tq + tg };
+  }
+
+  function initCalculator() {
+    var root = $('#calc');
+    if (!root) return;
+    var f = {
+      B: $('#cB'), Df: $('#cDf'), phi: $('#cPhi'), c: $('#cC'), g: $('#cG'), fs: $('#cFS'), gw: $('#cGW')
+    };
+    var out = {
+      B: $('#cBOut'), Df: $('#cDfOut'), phi: $('#cPhiOut'), c: $('#cCOut'), g: $('#cGOut'), fs: $('#cFSOut'),
+      qult: $('#qUlt'), qall: $('#qAll'), tC: $('#tC'), tQ: $('#tQ'), tG: $('#tG'),
+      Nc: $('#fNc'), Nq: $('#fNq'), Ng: $('#fNg'), chart: $('#calcChart'), bars: $$('#termBar .term')
+    };
+    var shapeBtns = $$('[data-shape]', root), presetBtns = $$('[data-preset]', root);
+    var shape = 'square';
+    var shown = { qult: 0, qall: 0 }, rafId;
+    var fmt = function (n) { return Math.round(n).toLocaleString('en-GB'); };
+    var fix = function (n, d) { return n.toFixed(d); };
+
+    function read() {
+      return { B: +f.B.value, Df: +f.Df.value, phi: +f.phi.value, c: +f.c.value, g: +f.g.value, fs: +f.fs.value, gw: f.gw.checked, shape: shape };
+    }
+
+    // Count the headline numbers towards their new values
+    function animateTo(target) {
+      cancelAnimationFrame(rafId);
+      var from = { qult: shown.qult, qall: shown.qall }, t0 = performance.now(), dur = reducedMotion.matches ? 0 : 380;
+      function step(now) {
+        var k = dur ? Math.min((now - t0) / dur, 1) : 1, e = 1 - Math.pow(1 - k, 3);
+        shown.qult = from.qult + (target.qult - from.qult) * e;
+        shown.qall = from.qall + (target.qall - from.qall) * e;
+        out.qult.textContent = fmt(shown.qult);
+        out.qall.textContent = fmt(shown.qall);
+        if (k < 1) rafId = requestAnimationFrame(step);
+      }
+      rafId = requestAnimationFrame(step);
+    }
+
+    function drawChart(p) {
+      var svg = out.chart, W = 360, H = 170, L = 44, R = 10, T = 10, Bm = 26;
+      var xs = [], ys = [];
+      for (var b = 0.5; b <= 5.0001; b += 0.1) { xs.push(b); ys.push(bearing(Object.assign({}, p, { B: b })).qult); }
+      var ymax = Math.max.apply(null, ys.concat([1]));
+      var nice = Math.pow(10, Math.floor(Math.log10(ymax)));
+      ymax = Math.ceil(ymax / nice) * nice;
+      var X = function (v) { return L + (v - 0.5) / 4.5 * (W - L - R); };
+      var Y = function (v) { return T + (1 - v / ymax) * (H - T - Bm); };
+      var d = xs.map(function (x, i) { return (i ? 'L' : 'M') + X(x).toFixed(1) + ' ' + Y(ys[i]).toFixed(1); }).join('');
+      var area = d + 'L' + X(5).toFixed(1) + ' ' + Y(0) + 'L' + X(0.5) + ' ' + Y(0) + 'Z';
+      var cur = bearing(p).qult;
+      var s = '';
+      [0, 0.5, 1].forEach(function (k) {
+        var v = ymax * k, y = Y(v).toFixed(1);
+        s += '<path class="axis" d="M' + L + ' ' + y + 'H' + (W - R) + '"/>';
+        s += '<text class="tick" x="' + (L - 6) + '" y="' + (+y + 3.5) + '" text-anchor="end">' + fmt(v) + '</text>';
+      });
+      [0.5, 1, 2, 3, 4, 5].forEach(function (v) {
+        s += '<text class="tick" x="' + X(v).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' + v + (v === 5 ? ' m' : '') + '</text>';
+      });
+      s += '<path class="area" d="' + area + '"/><path class="curve" d="' + d + '"/>';
+      s += '<path class="guide" d="M' + X(p.B).toFixed(1) + ' ' + Y(cur).toFixed(1) + 'V' + Y(0) + '"/>';
+      s += '<circle class="pt" cx="' + X(p.B).toFixed(1) + '" cy="' + Y(cur).toFixed(1) + '" r="6"/>';
+      svg.innerHTML = s;
+      svg.setAttribute('aria-label', 'Ultimate bearing capacity rises from ' + fmt(ys[0]) + ' kPa at 0.5 m wide to ' + fmt(ys[ys.length - 1]) + ' kPa at 5 m wide. Current width ' + p.B.toFixed(1) + ' m gives ' + fmt(cur) + ' kPa.');
+    }
+
+    function update() {
+      var p = read();
+      out.B.textContent = fix(p.B, 1) + ' m';
+      out.Df.textContent = fix(p.Df, 1) + ' m';
+      out.phi.textContent = p.phi + '°';
+      out.c.textContent = p.c + ' kPa';
+      out.g.textContent = fix(p.g, 1) + ' kN/m³';
+      out.fs.textContent = fix(p.fs, 1);
+      [['B', ' m'], ['Df', ' m'], ['phi', ' degrees'], ['c', ' kilopascals'], ['g', ' kilonewtons per cubic metre']].forEach(function (a) {
+        f[a[0]].setAttribute('aria-valuetext', f[a[0]].value + a[1]);
+      });
+      var r = bearing(p);
+      animateTo({ qult: r.qult, qall: r.qult / p.fs });
+      out.tC.textContent = fmt(r.tc); out.tQ.textContent = fmt(r.tq); out.tG.textContent = fmt(r.tg);
+      var total = r.qult || 1;
+      [r.tc, r.tq, r.tg].forEach(function (v, i) { if (out.bars[i]) out.bars[i].style.width = (v / total * 100).toFixed(2) + '%'; });
+      out.Nc.textContent = fix(r.Nc, 2); out.Nq.textContent = fix(r.Nq, 2); out.Ng.textContent = fix(r.Ng, 2);
+      shapeBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.shape === shape)); });
+      drawChart(p);
+    }
+
+    function clearPreset() { presetBtns.forEach(function (b) { b.setAttribute('aria-pressed', 'false'); }); }
+    ['B', 'Df', 'phi', 'c', 'g', 'fs'].forEach(function (k) {
+      f[k].addEventListener('input', function () { if (k === 'phi' || k === 'c' || k === 'g') clearPreset(); update(); });
+    });
+    f.gw.addEventListener('change', update);
+    shapeBtns.forEach(function (b) { b.addEventListener('click', function () { shape = b.dataset.shape; update(); }); });
+    presetBtns.forEach(function (b) {
+      b.setAttribute('aria-pressed', 'false');
+      b.addEventListener('click', function () {
+        var s = PRESETS[b.dataset.preset];
+        f.c.value = s.c; f.phi.value = s.phi; f.g.value = s.g;
+        clearPreset(); b.setAttribute('aria-pressed', 'true');
+        update();
+      });
+    });
+    update();
+  }
+
+  /* Small extras -------------------------------------------------------- */
+  function initExtras() {
+    var y = $('#year'); if (y) y.textContent = new Date().getFullYear();
+    // "/" jumps to the publication search
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+      var t = e.target;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      var s = $('#pubSearch');
+      if (s) { e.preventDefault(); s.focus(); s.scrollIntoView({ block: 'center', behavior: reducedMotion.matches ? 'auto' : 'smooth' }); }
+    });
+  }
+
   /* Boot ---------------------------------------------------------------- */
   function boot() {
     initTheme();
@@ -615,6 +832,10 @@
     initCopyButtons();
     initPublications();
     initLab();
+    initProgress();
+    initExplorer();
+    initCalculator();
+    initExtras();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
